@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["chain",""]],"struct":[["CountCollector",""],["FastFieldTestCollector",""],["MultiCollector",""],["TestCollector",""],["TopCollector",""]],"trait":[["Collector",""]]});

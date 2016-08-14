@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["OpenError",""],["ReadOnlySource",""]],"struct":[["MmapDirectory",""],["RAMDirectory",""],["SharedVec",""]],"trait":[["Directory","There is currently two implementations of `Directory` - RAMDirectory "],["SeekableWrite",""]],"type":[["WritePtr",""]]});

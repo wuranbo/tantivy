@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <title>Tutorial: Indexing Wikipedia with Tantivy CLI</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+<link rel="stylesheet" type="text/css" href="style.css">
+
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+    <h1 class="title">Tutorial: Indexing Wikipedia with Tantivy CLI</h1>
+    <nav id="TOC"><ul>
+<li><a href="#introduction">1 Introduction</a><ul></ul></li>
+<li><a href="#install">2 Install</a><ul></ul></li>
+<li><a href="#creating-the-index">3 Creating the index</a><ul></ul></li>
+<li><a href="#get-the-documents-to-index">4 Get the documents to index</a><ul></ul></li>
+<li><a href="#index-the-documents">5 Index the documents.</a><ul></ul></li>
+<li><a href="#serve-the-search-index">6 Serve the search index</a><ul></ul></li></ul></nav>
+<h1 id='introduction' class='section-header'><a href='#introduction'>1 Introduction</a></h1>
+<p>In this tutorial, we will create a brand new index
+with the articles of English wikipedia in it.</p>
+
+<h1 id='install' class='section-header'><a href='#install'>2 Install</a></h1>
+<p>There are two ways to get <code>tantivy</code>.
+If you are a rust programmer, you can run <code>cargo install tantivy</code>.
+Alternatively, if you are on <code>Linux 64bits</code>, you can download a
+static binary:  <a href="http://fulmicoton.com/tantivy/binaries/linux_x86_64/tantivy">binaries/linux_x86_64/</a> </p>
+
+<h1 id='creating-the-index' class='section-header'><a href='#creating-the-index'>3 Creating the index</a></h1>
+<p>Create a directory in which your index will be stored.</p>
+
+<pre><code class="language-bash">    # create the directory
+    mkdir wikipedia-index
+</code></pre>
+
+<p>We will now initialize the index and create it&#39;s schema.</p>
+
+<p>Our documents will contain
+* a title
+* a body 
+* a url</p>
+
+<p>Running <code>tantivy new</code> will start a wizard that will help you go through
+the definition of the schema of our new index.</p>
+
+<pre><code class="language-bash">    tantivy new -i wikipedia-index
+</code></pre>
+
+<p>When asked answer to the question as follows:</p>
+
+<pre><code class="language-none">
+    Creating new index 
+    Let&#39;s define it&#39;s schema! 
+
+
+
+    New field name  ? title
+    Text or unsigned 32-bit Integer (T/I) ? T
+    Should the field be stored (Y/N) ? Y
+    Should the field be indexed (Y/N) ? Y
+    Should the field be tokenized (Y/N) ? Y
+    Should the term frequencies (per doc) be in the index (Y/N) ? Y
+    Should the term positions (per doc) be in the index (Y/N) ? Y
+    Add another field (Y/N) ? Y
+
+
+
+    New field name  ? body
+    Text or unsigned 32-bit Integer (T/I) ? T
+    Should the field be stored (Y/N) ? Y
+    Should the field be indexed (Y/N) ? Y
+    Should the field be tokenized (Y/N) ? Y
+    Should the term frequencies (per doc) be in the index (Y/N) ? Y
+    Should the term positions (per doc) be in the index (Y/N) ? Y
+    Add another field (Y/N) ? Y
+
+
+
+    New field name  ? url
+    Text or unsigned 32-bit Integer (T/I) ? T
+    Should the field be stored (Y/N) ? Y
+    Should the field be indexed (Y/N) ? N
+    Add another field (Y/N) ? N
+
+    [
+    {
+        &quot;name&quot;: &quot;title&quot;,
+        &quot;type&quot;: &quot;text&quot;,
+        &quot;options&quot;: {
+        &quot;indexing&quot;: &quot;position&quot;,
+        &quot;stored&quot;: true
+        }
+    },
+    {
+        &quot;name&quot;: &quot;body&quot;,
+        &quot;type&quot;: &quot;text&quot;,
+        &quot;options&quot;: {
+        &quot;indexing&quot;: &quot;position&quot;,
+        &quot;stored&quot;: true
+        }
+    },
+    {
+        &quot;name&quot;: &quot;url&quot;,
+        &quot;type&quot;: &quot;text&quot;,
+        &quot;options&quot;: {
+        &quot;indexing&quot;: &quot;unindexed&quot;,
+        &quot;stored&quot;: true
+        }
+    }
+    ]
+
+
+</code></pre>
+
+<p>If you want to know more about the meaning of these options, you can check out the <a href="http://fulmicoton.com/tantivy/tantivy/schema/index.html">schema doc page</a>.  </p>
+
+<p>The json displayed at the end has been written in <code>wikipedia-index/meta.json</code>.</p>
+
+<h1 id='get-the-documents-to-index' class='section-header'><a href='#get-the-documents-to-index'>4 Get the documents to index</a></h1>
+<p>Tantivy&#39;s index command offers a way to index a json file.
+More accurately, the file must contain one document per line, in a json format.
+The structure of this JSON object must match that of our schema definition.</p>
+
+<pre><code class="language-json">    {&quot;body&quot;: &quot;some text&quot;, &quot;title&quot;: &quot;some title&quot;, &quot;url&quot;: &quot;http://somedomain.com&quot;}
+</code></pre>
+
+<p>You can download a corpus of more than 5 millions articles from wikipedia 
+formatted in the right format here : <a href="https://www.dropbox.com/s/wwnfnu441w1ec9p/wiki-articles.json.bz2?dl=0">wiki-articles.json (2.34 GB)</a>.
+If you are in a rush you can <a href="http://fulmicoton.com/tantivy/tutorial/wiki-articles-first100.json">download 100 articles in the right format here</a>.</p>
+
+<p>Make sure to uncompress the file</p>
+
+<pre><code class="language-bash">    bunzip2 wiki-articles.json.bz2
+</code></pre>
+
+<h1 id='index-the-documents' class='section-header'><a href='#index-the-documents'>5 Index the documents.</a></h1>
+<p>The <code>index</code> command will index your document.
+By default it will use as many threads as there are core on your machine.</p>
+
+<p>On my computer (8 core Xeon(R) CPU X3450  @ 2.67GHz), it only takes 7 minutes.</p>
+
+<pre class='rust rust-example-rendered'>
+    <span class='ident'>cat</span> <span class='op'>/</span><span class='ident'>data</span><span class='op'>/</span><span class='ident'>wiki</span><span class='op'>-</span><span class='ident'>articles</span> <span class='op'>|</span> <span class='ident'>tantivy</span> <span class='ident'>index</span> <span class='op'>-</span><span class='ident'>i</span> <span class='ident'>wikipedia</span><span class='op'>-</span><span class='ident'>index</span></pre>
+
+<p>While it is indexing, you can peek at the index directory
+to check what is happening.</p>
+
+<pre><code class="language-bash">    ls wikipedia-index
+</code></pre>
+
+<p>If you indexed the 5 millions articles, you should see a lot of files, all with the following format
+The main file is <code>meta.json</code>.</p>
+
+<p>Our index is in fact divided in segments. Each segment acts as an individual smaller index.
+It is named by a uuid. 
+Each different files is storing a different datastructure for the index.</p>
+
+<h1 id='serve-the-search-index' class='section-header'><a href='#serve-the-search-index'>6 Serve the search index</a></h1>
+<pre class='rust rust-example-rendered'>
+    <span class='ident'>tantivy</span> <span class='ident'>serve</span> <span class='op'>-</span><span class='ident'>i</span> <span class='ident'>wikipedia</span><span class='op'>-</span><span class='ident'>index</span></pre>
+
+<p>You can start a small server with a JSON API to search into wikipedia.
+By default, the server is serving on the port <code>3000</code>.</p>
+
+    <script type="text/javascript">
+        window.playgroundUrl = "";
+    </script>
+    
+</body>
+</html>

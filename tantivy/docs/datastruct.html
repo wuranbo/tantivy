@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <title>Tantivy&#39;s datastructure and index format</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+<link rel="stylesheet" type="text/css" href="style.css">
+
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+    <h1 class="title">Tantivy&#39;s datastructure and index format</h1>
+    <nav id="TOC"><ul>
+<li><a href="#an-inverted-index">1 An inverted index</a><ul>
+<li><a href="#term-dictionary">1.1 Term dictionary</a><ul></ul></li>
+<li><a href="#postings">1.2 Postings</a><ul></ul></li></ul></li>
+<li><a href="#segments">2 Segments</a><ul></ul></li>
+<li><a href="#store">3 Store</a><ul></ul></li></ul></nav><p>This document explains how tantivy works, and specifically 
+what kind of datastructures are used to index and store the data.</p>
+
+<h1 id='an-inverted-index' class='section-header'><a href='#an-inverted-index'>1 An inverted index</a></h1>
+<p>As you may know, an idea central to search engines is to assign a document id 
+to each document, and build an inverted index, which is simply
+a datastructure associating each term (word) to a sorted list of doc ids.   </p>
+
+<p>Such an index then makes it possible to compute the union or
+the intersection of the documents containing two terms
+in <code>O(1)</code> memory and <code>O(n)</code> time.</p>
+
+<h2 id='term-dictionary' class='section-header'><a href='#term-dictionary'>1.1 Term dictionary</a></h2>
+<p>Tantivy term dicionary (<code>.term</code> files) are stored in
+a finite state transducer (courtesy of the excellent
+<a href="https://github.com/BurntSushi/fst"><code>fst</code></a> crate).</p>
+
+<p>For each term, the dictionary associates
+a <a href="http://fulmicoton.com/tantivy/tantivy/postings/struct.TermInfo.html">TermInfo</a>. 
+which contains all of the information required to access the list of doc ids of the doc containing
+the term.</p>
+
+<p>In fact <code>fst</code> can only associated terms to a long. <a href="https://github.com/fulmicoton/tantivy/blob/master/src/datastruct/fstmap.rs"><code>FstMap</code></a> are
+in charge to build a KV map on top of it.  </p>
+
+<h2 id='postings' class='section-header'><a href='#postings'>1.2 Postings</a></h2>
+<p>The posting lists (sorted list of doc ids) are encoded in the <code>.idx</code> file.
+Optionally, you specify in your schema that you want tf-idf to be encoded
+in the index file (if you do not, the index will behave as if all documents
+have a term frequency of 1).
+Tf-idf scoring requires the term frequency (number of time the term appeared in the field of the document)
+for each document.</p>
+
+<h1 id='segments' class='section-header'><a href='#segments'>2 Segments</a></h1>
+<p>Tantivy&#39;s index are divided into segments.
+All segments are as many independant structure.</p>
+
+<p>This has many benefits. For instance, assuming you are
+trying to one billion documents, you could split
+your corpus into N pieces, index them on Hadoop, copy all
+of the resulting segments in the same directory 
+and edit the index meta.json file to list all of the segments.</p>
+
+<p>This strong division also simplify a lot multithreaded indexing.
+Each thread is actually build its own segment.</p>
+
+<h1 id='store' class='section-header'><a href='#store'>3 Store</a></h1>
+<p>The store 
+When a document  </p>
+
+    <script type="text/javascript">
+        window.playgroundUrl = "";
+    </script>
+    
+</body>
+</html>

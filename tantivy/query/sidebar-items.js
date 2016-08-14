@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Occur",""]],"struct":[["DAATMultiTermScorer",""],["Explanation",""],["MultiTermQuery",""],["QueryParser",""],["SimilarityExplainer",""],["TfIdf",""]],"trait":[["MultiTermAccumulator",""],["Query",""],["Scorer",""],["Similarity",""]]});
